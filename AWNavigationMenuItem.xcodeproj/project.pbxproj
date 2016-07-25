@@ -296,6 +296,7 @@
 				3050ADE21D45F0BE00A9DD85 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
