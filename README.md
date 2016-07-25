@@ -1,6 +1,8 @@
 # AWNavigationMenuItem
 Navigation Menu for iOS.
 
+<img src="http://abewang.myftp.org/AWNavigationMenuItem.gif" width="277" height="494"/>
+
 # License
 This project is under MIT License.
 
