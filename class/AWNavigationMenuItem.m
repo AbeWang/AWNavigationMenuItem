@@ -11,9 +11,8 @@
 #pragma mark - AWNavigationMenuItemCell
 
 @interface AWNavigationMenuItemCell : UITableViewCell
-@property (nonatomic, strong) UILabel *titleLabel;
-@property (nonatomic, strong) UILabel *subtitleLabel;
-@property (nonatomic, strong) UIImageView *selectImageView;
+@property (nonatomic, strong, nullable) UILabel *titleLabel;
+@property (nonatomic, strong, nullable) UIImageView *selectImageView;
 @property (nonatomic, assign) BOOL isSelected;
 @end
 
@@ -32,12 +31,6 @@
 		self.titleLabel.font = [UIFont systemFontOfSize:16.f];
 		[self.contentView addSubview:self.titleLabel];
 		
-		self.subtitleLabel = [[UILabel alloc] init];
-		self.subtitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-		self.subtitleLabel.textColor = [UIColor colorWithWhite:0.7 alpha:1.0];
-		self.subtitleLabel.font = [UIFont systemFontOfSize:14.f];
-		[self.contentView addSubview:self.subtitleLabel];
-		
 		self.selectImageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"navi_choose"]];
 		self.selectImageView.translatesAutoresizingMaskIntoConstraints = NO;
 		[self.contentView addSubview:self.selectImageView];
@@ -46,8 +39,8 @@
 		[NSLayoutConstraint constraintWithItem:self.titleLabel attribute:NSLayoutAttributeCenterY relatedBy:NSLayoutRelationEqual toItem:self.contentView attribute:NSLayoutAttributeCenterY multiplier:1.f constant:0.f].active = YES;
 		[NSLayoutConstraint constraintWithItem:self.selectImageView attribute:NSLayoutAttributeCenterY relatedBy:NSLayoutRelationEqual toItem:self.contentView attribute:NSLayoutAttributeCenterY multiplier:1.f constant:0.f].active = YES;
 		[NSLayoutConstraint constraintWithItem:self.selectImageView attribute:NSLayoutAttributeRight relatedBy:NSLayoutRelationEqual toItem:self.contentView attribute:NSLayoutAttributeRight multiplier:1.f constant:-6.f].active = YES;
-		[NSLayoutConstraint constraintWithItem:self.subtitleLabel attribute:NSLayoutAttributeCenterY relatedBy:NSLayoutRelationEqual toItem:self.contentView attribute:NSLayoutAttributeCenterY multiplier:1.f constant:0.f].active = YES;
-		[NSLayoutConstraint activateConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:[_titleLabel]-10-[_subtitleLabel]->=5-[_selectImageView]" options:0 metrics:nil views:NSDictionaryOfVariableBindings(_titleLabel, _subtitleLabel, _selectImageView)]];
+
+		[NSLayoutConstraint activateConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:[_titleLabel]-(>=15)-[_selectImageView]" options:0 metrics:nil views:NSDictionaryOfVariableBindings(_titleLabel, _selectImageView)]];
 	}
 	return self;
 }
@@ -72,13 +65,16 @@ static CGFloat const kMenuTopSpacing = 76.f;
 <UITableViewDelegate,
 UITableViewDataSource,
 UIGestureRecognizerDelegate>
-@property (nonatomic, strong) NSLayoutConstraint *menuHeightConstraint;
+@property (nonatomic, strong, nullable) NSLayoutConstraint *menuHeightConstraint;
+@property (nonatomic, strong, nullable) UIButton *menuNavigationBarButton;
+@property (nonatomic, strong, nullable) UILabel *navigationTitle;
+@property (nonatomic, strong, nullable) UIImageView *arrowImage;
+@property (nonatomic, strong, nullable) UITableView *menuTableView;
+@property (nonatomic, strong, nullable) UIView *maskView;
+@property (nonatomic, strong, nullable) NSDictionary *defaultTitleAttributes;
+@property (nonatomic, strong, nullable) NSDictionary *defaultMenuItemAttributes;
+@property (nonatomic, strong, nullable) NSDictionary *defaultSelectedMenuItemAttributes;
 @property (nonatomic, assign) NSUInteger lastSelectedIndex;
-@property (nonatomic, strong) UIButton *menuNavigationBarButton;
-@property (nonatomic, strong) UILabel *navigationTitle;
-@property (nonatomic, strong) UIImageView *arrowImage;
-@property (nonatomic, strong) UITableView *menuTableView;
-@property (nonatomic, strong) UIView *maskView;
 @property (nonatomic, assign) CGFloat menuHeight;
 @end
 
@@ -111,6 +107,10 @@ UIGestureRecognizerDelegate>
 		
 		self.menuHeightConstraint = [NSLayoutConstraint constraintWithItem:self.menuTableView attribute:NSLayoutAttributeHeight relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1.f constant:0.f];
 		self.menuHeightConstraint.active = YES;
+		
+		self.defaultTitleAttributes = @{NSForegroundColorAttributeName: [UIColor blackColor], NSFontAttributeName: [UIFont boldSystemFontOfSize:17.f]};
+		self.defaultMenuItemAttributes = @{NSForegroundColorAttributeName: [UIColor grayColor], NSFontAttributeName: [UIFont systemFontOfSize:16.f]};
+		self.defaultSelectedMenuItemAttributes = @{NSForegroundColorAttributeName: [UIColor blackColor], NSFontAttributeName: [UIFont systemFontOfSize:16.f]};
 	}
 	return self;
 }
@@ -124,12 +124,16 @@ UIGestureRecognizerDelegate>
 
 - (void)installNavigationTitleView
 {
-	NSString *defaultTitle = [self.dataSource navigationMenuItem:self menuTitleAtIndex:0];
+	NSAttributedString *attributedTitle;
+	if ([self.dataSource respondsToSelector:@selector(navigationMenuItem:attributedMenuTitleAtIndex:)]) {
+		attributedTitle = [self.dataSource navigationMenuItem:self attributedMenuTitleAtIndex:0];
+	}
+	if (!attributedTitle && [self.dataSource respondsToSelector:@selector(navigationMenuItem:menuTitleAtIndex:)]) {
+		attributedTitle = [[NSAttributedString alloc] initWithString:[self.dataSource navigationMenuItem:self menuTitleAtIndex:0] ?: @"" attributes:self.defaultTitleAttributes];
+	}
 	
 	self.navigationTitle = [[UILabel alloc] initWithFrame:CGRectMake(10.0, 0.0, CGRectGetWidth([UIScreen mainScreen].bounds), 44.0)];
-	self.navigationTitle.text = defaultTitle;
-	self.navigationTitle.textColor = [UIColor blackColor];
-	self.navigationTitle.font = [UIFont boldSystemFontOfSize:17.f];
+	self.navigationTitle.attributedText = attributedTitle;
 	
 	self.arrowImage = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"navi_filter_normal"]];
 	
@@ -146,10 +150,10 @@ UIGestureRecognizerDelegate>
 {
 	[self.navigationTitle sizeToFit];
 	
-	self.menuNavigationBarButton.frame = CGRectMake(0.f, 0.f, self.navigationTitle.frame.size.width + self.arrowImage.frame.size.width + 25.0, self.navigationTitle.frame.size.height);
+	self.menuNavigationBarButton.frame = CGRectMake(0.f, 0.f, CGRectGetWidth(self.navigationTitle.frame) + CGRectGetWidth(self.arrowImage.frame) + 25.f, CGRectGetHeight(self.navigationTitle.frame));
 	
 	[self.menuNavigationBarButton addSubview:self.navigationTitle];
-	self.arrowImage.frame = CGRectMake(CGRectGetMaxX(self.navigationTitle.frame) + 5.0, (self.menuNavigationBarButton.frame.size.height - self.arrowImage.frame.size.height) / 2.0, self.arrowImage.frame.size.width, self.arrowImage.frame.size.height);
+	self.arrowImage.frame = CGRectMake(CGRectGetMaxX(self.navigationTitle.frame) + 5.0, (CGRectGetHeight(self.menuNavigationBarButton.frame) - CGRectGetHeight(self.arrowImage.frame)) / 2.f, CGRectGetWidth(self.arrowImage.frame), CGRectGetHeight(self.arrowImage.frame));
 	[self.menuNavigationBarButton addSubview:self.arrowImage];
 	
 	// Do this trick to let button be center of navigation bar
@@ -159,13 +163,13 @@ UIGestureRecognizerDelegate>
 
 - (void)cancelHighlight
 {
-	self.navigationTitle.textColor = [UIColor blackColor];
+	self.navigationTitle.alpha = 1.f;
 	self.arrowImage.image = [UIImage imageNamed:@"navi_filter_normal"];
 }
 
 - (void)highlight
 {
-	self.navigationTitle.textColor = [UIColor grayColor];
+	self.navigationTitle.alpha = 0.5f;
 	self.arrowImage.image = [UIImage imageNamed:@"navi_filter_focus"];
 }
 
@@ -179,15 +183,12 @@ UIGestureRecognizerDelegate>
 	[self cancelHighlight];
 	
 	if (self.isExpanded && [self.maskView superview]) {
-		
-		[self _rotateArrowOn:NO];
-		
+		[self rotateArrowOn:NO];
 		if ([self.delegate respondsToSelector:@selector(navigationMenuItemWillFold:)]) {
 			[self.delegate navigationMenuItemWillFold:self];
 		}
 		
 		__weak typeof(self) weakSelf = self;
-		
 		[UIView animateWithDuration:kNavigationMenuAnimationDuration animations:^{
 			weakSelf.arrowImage.image = [UIImage imageNamed:@"navi_filter_normal"];
 			weakSelf.menuHeightConstraint.constant = 0.f;
@@ -198,12 +199,7 @@ UIGestureRecognizerDelegate>
 		}];
 	}
 	else if (![self.maskView superview]) {
-		if ([self.delegate respondsToSelector:@selector(navigationMenuItemShouldUnFold:)]) {
-			if (![self.delegate navigationMenuItemShouldUnFold:self]) {
-				return;
-			}
-		}
-		[self _rotateArrowOn:YES];
+		[self rotateArrowOn:YES];
 		if ([self.delegate respondsToSelector:@selector(navigationMenuItemWillUnfold:)]) {
 			[self.delegate navigationMenuItemWillUnfold:self];
 		}
@@ -215,7 +211,6 @@ UIGestureRecognizerDelegate>
 		[self.maskView layoutIfNeeded];
 		
 		__weak typeof(self) weakSelf = self;
-		
 		[UIView animateWithDuration:kNavigationMenuAnimationDuration animations:^{
 			weakSelf.arrowImage.image = [UIImage imageNamed:@"navi_filter_focus"];
 			weakSelf.menuHeightConstraint.constant = self.menuHeight;
@@ -227,22 +222,13 @@ UIGestureRecognizerDelegate>
 	_isExpanded = !self.isExpanded;
 }
 
-- (void)_rotateArrowOn:(BOOL)on
+- (void)rotateArrowOn:(BOOL)on
 {
-	CATransform3D fromZRotation;
-	CATransform3D toZRotation;
-	if (on) {
-		toZRotation = CATransform3DMakeRotation(180.0 * M_PI / 180.0, 0.0, 0, 1.0);
-		fromZRotation = CATransform3DMakeRotation(0.0, 0.0, 0, 1.0);
-	}
-	else {
-		fromZRotation = CATransform3DMakeRotation(179.0 * M_PI / 180.0, 0.0, 0, 1.0);
-		toZRotation = CATransform3DMakeRotation(0.0, 0.0, 0, 1.0);
-	}
-	
+	CATransform3D fromZRotation = on ? CATransform3DMakeRotation(0.f, 0.f, 0.f, 1.f) : CATransform3DMakeRotation(179.f * M_PI / 180.f, 0.f, 0.f, 1.f);
+	CATransform3D toZRotation = on ? CATransform3DMakeRotation(180.f * M_PI / 180.f, 0.f, 0.f, 1.f) : CATransform3DMakeRotation(0.f, 0.f, 0.f, 1.f);
 	CATransform3D transformation = CATransform3DIdentity;
-	CATransform3D xRotation = CATransform3DMakeRotation(0.0, 1.0, 0.0, 0.0);
-	CATransform3D yRotation = CATransform3DMakeRotation(0.0, 0.0, 1.0, 0.0);
+	CATransform3D xRotation = CATransform3DMakeRotation(0.f, 1.f, 0.f, 0.f);
+	CATransform3D yRotation = CATransform3DMakeRotation(0.f, 0.f, 1.f, 0.f);
 	
 	CATransform3D xyConcat = CATransform3DConcat(xRotation, yRotation);
 	CATransform3D toXyzConcat = CATransform3DConcat(xyConcat, toZRotation);
@@ -253,7 +239,7 @@ UIGestureRecognizerDelegate>
 	CABasicAnimation *rotation = [CABasicAnimation animationWithKeyPath:@"transform"];
 	rotation.fromValue = [NSValue valueWithCATransform3D:fromConcat];
 	rotation.toValue = [NSValue valueWithCATransform3D:toConcat];
-	rotation.duration = 0.25;
+	rotation.duration = 0.25f;
 	rotation.fillMode = kCAFillModeForwards;
 	rotation.removedOnCompletion = NO;
 	[self.arrowImage.layer addAnimation:rotation forKey:@"animation"];
@@ -269,11 +255,17 @@ UIGestureRecognizerDelegate>
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
 	AWNavigationMenuItemCell *cell = [tableView dequeueReusableCellWithIdentifier:kMenuCellIdentifier forIndexPath:indexPath];
-	cell.titleLabel.text = [self.dataSource navigationMenuItem:self menuTitleAtIndex:indexPath.row];
-	if ([self.dataSource respondsToSelector:@selector(navigationMenuItem:menuSubtitleAtIndex:)]) {
-		cell.subtitleLabel.text = [self.dataSource navigationMenuItem:self menuSubtitleAtIndex:indexPath.row];
-	}
 	cell.isSelected = (indexPath.row == self.lastSelectedIndex);
+	
+	NSAttributedString *attributedMenuTitle;
+	if ([self.dataSource respondsToSelector:@selector(navigationMenuItem:attributedMenuTitleAtIndex:)]) {
+		attributedMenuTitle = [self.dataSource navigationMenuItem:self attributedMenuTitleAtIndex:indexPath.row];
+	}
+	if (!attributedMenuTitle && [self.dataSource respondsToSelector:@selector(navigationMenuItem:menuTitleAtIndex:)]) {
+		attributedMenuTitle = [[NSAttributedString alloc] initWithString:[self.dataSource navigationMenuItem:self menuTitleAtIndex:indexPath.row] ?: @"" attributes:cell.isSelected ? self.defaultSelectedMenuItemAttributes : self.defaultMenuItemAttributes];
+	}
+	cell.titleLabel.attributedText = attributedMenuTitle;
+	
 	return cell;
 }
 
@@ -293,10 +285,15 @@ UIGestureRecognizerDelegate>
 	}
 	
 	__weak typeof(self) weakSelf = self;
-	
-	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-		NSString *menuTitle = [weakSelf.dataSource navigationMenuItem:weakSelf menuTitleAtIndex:weakSelf.lastSelectedIndex];
-		weakSelf.navigationTitle.text = menuTitle;
+	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1f * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+		NSAttributedString *attributedTitle;
+		if ([weakSelf.dataSource respondsToSelector:@selector(navigationMenuItem:attributedMenuTitleAtIndex:)]) {
+			attributedTitle = [weakSelf.dataSource navigationMenuItem:weakSelf attributedMenuTitleAtIndex:weakSelf.lastSelectedIndex];
+		}
+		if (!attributedTitle && [weakSelf.dataSource respondsToSelector:@selector(navigationMenuItem:menuTitleAtIndex:)]) {
+			attributedTitle = [[NSAttributedString alloc] initWithString:[weakSelf.dataSource navigationMenuItem:weakSelf menuTitleAtIndex:weakSelf.lastSelectedIndex] ?: @"" attributes:weakSelf.defaultTitleAttributes];
+		}
+		weakSelf.navigationTitle.attributedText = attributedTitle;
 		[weakSelf resizeNavigationBarButton];
 		[weakSelf toggle];
 	});

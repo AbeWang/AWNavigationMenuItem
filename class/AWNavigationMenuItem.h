@@ -11,25 +11,24 @@
 
 @protocol AWNavigationMenuItemDataSource <NSObject>
 @required
-- (NSUInteger)numberOfRowsInNavigationMenuItem:(AWNavigationMenuItem *)inMenuItem;
-- (NSString *)navigationMenuItem:(AWNavigationMenuItem *)inMenuItem menuTitleAtIndex:(NSUInteger)inIndex;
-- (CGRect)maskViewFrameInNavigationMenuItem:(AWNavigationMenuItem *)inMenuItem;
+- (NSUInteger)numberOfRowsInNavigationMenuItem:(nonnull AWNavigationMenuItem *)inMenuItem;
 @optional
-- (NSString *)navigationMenuItem:(AWNavigationMenuItem *)inMenuItem menuSubtitleAtIndex:(NSUInteger)inIndex;
+- (CGRect)maskViewFrameInNavigationMenuItem:(nonnull AWNavigationMenuItem *)inMenuItem;
+- (nullable NSString *)navigationMenuItem:(nonnull AWNavigationMenuItem *)inMenuItem menuTitleAtIndex:(NSUInteger)inIndex;
+- (nullable NSAttributedString *)navigationMenuItem:(nonnull AWNavigationMenuItem *)inMenuItem attributedMenuTitleAtIndex:(NSUInteger)inIndex;
 @end
 
 @protocol AWNavigationMenuItemDelegate <NSObject>
 @optional
-- (void)navigationMenuItem:(AWNavigationMenuItem *)inMenuItem selectionDidChange:(NSUInteger)inIndex;
-- (BOOL)navigationMenuItemShouldUnFold:(AWNavigationMenuItem *)inMenuItem;
-- (void)navigationMenuItemWillUnfold:(AWNavigationMenuItem *)inMenuItem;
-- (void)navigationMenuItemWillFold:(AWNavigationMenuItem *)inMenuItem;
+- (void)navigationMenuItem:(nonnull AWNavigationMenuItem *)inMenuItem selectionDidChange:(NSUInteger)inIndex;
+- (void)navigationMenuItemWillUnfold:(nonnull AWNavigationMenuItem *)inMenuItem;
+- (void)navigationMenuItemWillFold:(nonnull AWNavigationMenuItem *)inMenuItem;
 @end
 
 @interface AWNavigationMenuItem : NSObject
 - (void)reloadMenu;
-@property (nonatomic, weak) UIViewController<AWNavigationMenuItemDataSource> *dataSource;
-@property (nonatomic, weak) UIViewController<AWNavigationMenuItemDelegate> *delegate;
-@property (nonatomic, readonly) UIButton *menuNavigationBarButton;
+@property (nonatomic, weak, nullable) UIViewController<AWNavigationMenuItemDataSource> *dataSource;
+@property (nonatomic, weak, nullable) UIViewController<AWNavigationMenuItemDelegate> *delegate;
+@property (nonatomic, readonly, nullable) UIButton *menuNavigationBarButton;
 @property (nonatomic, assign) BOOL isExpanded;
 @end

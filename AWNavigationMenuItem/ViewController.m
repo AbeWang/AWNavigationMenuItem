@@ -49,7 +49,22 @@
 
 - (NSString *)navigationMenuItem:(AWNavigationMenuItem *)inMenuItem menuTitleAtIndex:(NSUInteger)inIndex
 {
-	return self.titles[inIndex];
+	return (inIndex % 2) == 1 ? self.titles[inIndex] : nil;
+}
+
+- (NSAttributedString *)navigationMenuItem:(AWNavigationMenuItem *)inMenuItem attributedMenuTitleAtIndex:(NSUInteger)inIndex
+{
+	NSMutableAttributedString *attributedMenu = [[NSMutableAttributedString alloc] initWithString:self.titles[inIndex] attributes:@{NSForegroundColorAttributeName: [UIColor purpleColor], NSFontAttributeName: [UIFont systemFontOfSize:20.f]}];
+	[attributedMenu setAttributes:@{NSForegroundColorAttributeName: [UIColor redColor], NSFontAttributeName: [UIFont systemFontOfSize:26.f]} range:NSMakeRange(self.titles[inIndex].length - 1, 1)];
+	
+	NSTextAttachment *attachment = [[NSTextAttachment alloc] init];
+	attachment.image = [UIImage imageNamed:@"icon_pressure"];
+	attachment.bounds = CGRectMake(0.f, 0.f, 20.f, 20.f);
+	
+	NSAttributedString *attachmentString = [NSAttributedString attributedStringWithAttachment:attachment];
+	[attributedMenu insertAttributedString:attachmentString atIndex:5];
+	
+	return (inIndex % 2) == 0 ? attributedMenu : nil;
 }
 
 - (CGRect)maskViewFrameInNavigationMenuItem:(AWNavigationMenuItem *)inMenuItem
@@ -64,9 +79,14 @@
 	self.contentLabel.text = self.titles[inIndex];
 }
 
-- (BOOL)navigationMenuItemShouldUnFold:(AWNavigationMenuItem *)inMenuItem
+- (void)navigationMenuItemWillUnfold:(AWNavigationMenuItem *)inMenuItem
 {
-	return YES;
+	NSLog(@"%s", __PRETTY_FUNCTION__);
+}
+
+- (void)navigationMenuItemWillFold:(AWNavigationMenuItem *)inMenuItem
+{
+	NSLog(@"%s", __PRETTY_FUNCTION__);
 }
 
 @end
