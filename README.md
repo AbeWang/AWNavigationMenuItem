@@ -11,7 +11,9 @@ This project works on iOS 8+ and requires ARC to build.
 # Usage
 You can add the `AWNavigationMenuItem.h` and `AWNavigationMenuItem.m` source files to your project.
 
-1. Include AWNavigationMenuItem header. `#import "AWNavigationMenuItem.h"`
+1. Include AWNavigationMenuItem header. 
+`#import "AWNavigationMenuItem.h"`
+
 2. Initialize AWNavigationMenuItem.
 
 ```objc
