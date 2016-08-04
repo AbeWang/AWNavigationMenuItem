@@ -12,8 +12,8 @@
 @protocol AWNavigationMenuItemDataSource <NSObject>
 @required
 - (NSUInteger)numberOfRowsInNavigationMenuItem:(nonnull AWNavigationMenuItem *)inMenuItem;
-@optional
 - (CGRect)maskViewFrameInNavigationMenuItem:(nonnull AWNavigationMenuItem *)inMenuItem;
+@optional
 - (nullable NSString *)navigationMenuItem:(nonnull AWNavigationMenuItem *)inMenuItem menuTitleAtIndex:(NSUInteger)inIndex;
 - (nullable NSAttributedString *)navigationMenuItem:(nonnull AWNavigationMenuItem *)inMenuItem attributedMenuTitleAtIndex:(NSUInteger)inIndex;
 @end
