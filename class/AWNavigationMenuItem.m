@@ -80,9 +80,16 @@ UIGestureRecognizerDelegate>
 
 @implementation AWNavigationMenuItem
 
+- (void)dealloc
+{
+	[[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
 - (instancetype)init
 {
 	if (self = [super init]) {
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(orientationDidChange:) name:UIDeviceOrientationDidChangeNotification object:nil];
+		
 		UITapGestureRecognizer *tapMaskViewGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(toggle)];
 		tapMaskViewGestureRecognizer.delegate = self;
 		
@@ -99,6 +106,10 @@ UIGestureRecognizerDelegate>
 		self.menuTableView.dataSource = self;
 		self.menuTableView.delegate = self;
 		[self.maskView addSubview:self.menuTableView];
+		
+		if ([[UIDevice currentDevice].systemVersion floatValue] >= 9.0) {
+			self.menuTableView.cellLayoutMarginsFollowReadableWidth = NO;
+		}
 		
 		[self.menuTableView registerClass:[AWNavigationMenuItemCell class] forCellReuseIdentifier:kMenuCellIdentifier];
 		
@@ -245,6 +256,14 @@ UIGestureRecognizerDelegate>
 	[self.arrowImage.layer addAnimation:rotation forKey:@"animation"];
 }
 
+- (void)updateMaskLayout
+{
+	self.maskView.frame = [self.dataSource maskViewFrameInNavigationMenuItem:self];
+	self.menuHeight = kNavigationButtonHeight * [self.dataSource numberOfRowsInNavigationMenuItem:self];
+	self.menuHeightConstraint.constant = self.menuHeight;
+	[self.maskView layoutIfNeeded];
+}
+
 #pragma mark - UITableView delegate & dataSource
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
@@ -306,6 +325,16 @@ UIGestureRecognizerDelegate>
 	return (touch.view == self.maskView);
 }
 
+#pragma mark - Notifications
+
+- (void)orientationDidChange:(NSNotification *)inNotification
+{
+	self.isExpanded = NO;
+	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+		[self updateMaskLayout];
+	});
+}
+
 #pragma mark - Properties
 
 - (void)setDataSource:(UIViewController<AWNavigationMenuItemDataSource> *)inDataSource
@@ -316,10 +345,7 @@ UIGestureRecognizerDelegate>
 		[self installNavigationTitleView];
 	}
 	
-	self.maskView.frame = [self.dataSource maskViewFrameInNavigationMenuItem:self];
-	self.menuHeight = kNavigationButtonHeight * [self.dataSource numberOfRowsInNavigationMenuItem:self];
-	self.menuHeightConstraint.constant = self.menuHeight;
-	[self.maskView layoutIfNeeded];
+	[self updateMaskLayout];
 }
 
 - (void)setIsExpanded:(BOOL)isExpanded
